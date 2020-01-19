@@ -1,6 +1,6 @@
 {
   "name": "@j.u.p.iter/auth-provider",
-  "version": "0.0.0-semantically-released",
+  "version": "0.0.2",
   "description": "Auth provider",
   "keywords": [
     "authentication",
