@@ -1,0 +1,35 @@
+{
+  "name": "@j.u.p.iter/auth-provider",
+  "version": "0.0.0-semantically-released",
+  "description": "Auth provider",
+  "keywords": [
+    "authentication",
+    "auth provider"
+  ],
+  "main": "dist/lib/auth-provider.cjs.js",
+  "module": "dist/lib/auth-provider.esm.js",
+  "typings": "dist/types",
+  "repository": "git@github.com:j-u-p-iter/auth-provider.git",
+  "author": "Leontyev Kirill (j.u.p.iter) <pn79122821224@gmail.com> (http://j-u-p-iter.ru/)",
+  "license": "MIT",
+  "scripts": {
+    "commit": "jupiter-scripts precommit --allowJs",
+    "build": "jupiter-scripts build --bundle",
+    "start": "yarn run build --watch",
+    "lint": "jupiter-scripts lint --format codeFrame",
+    "lint:fix": "yarn run lint --fix",
+    "test": "jupiter-scripts test"
+  },
+  "peerDependencies": {
+    "mongoose": ">=5.8.7"
+  },
+  "devDependencies": {
+    "@j.u.p.iter/jupiter-scripts": "^1.14.1",
+    "@types/bcrypt": "^3.0.0",
+    "@types/jsonwebtoken": "^8.3.6"
+  },
+  "dependencies": {
+    "bcrypt": "^3.0.7",
+    "jsonwebtoken": "^8.5.1"
+  }
+}
