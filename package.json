@@ -1,9 +1,10 @@
 {
   "name": "@j.u.p.iter/auth-provider",
-  "version": "0.0.1",
+  "version": "0.0.0-semantically-released",
   "description": "Auth provider",
   "keywords": [
     "authentication",
+    "authorization",
     "auth provider"
   ],
   "main": "dist/lib/auth-provider.cjs.js",
