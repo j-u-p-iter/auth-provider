@@ -1,56 +1,150 @@
-import bcrypt from "bcrypt";
-import { sign, verify } from "jsonwebtoken";
-
-interface Config {
-  PASSWORD_SALT_ROUNDS: number;
-  AUTH_TOKEN_SECRET: string;
-}
+import { makeUrl } from "@j.u.p.iter/node-utils";
+import baseAxios from "axios";
+import httpAdapter from "axios/lib/adapters/http";
 
 type UserData = any;
 
-interface AuthProvider {
-  hashPassword: (password: string) => Promise<string | void>;
-  checkPassword: (
-    newPassword: string,
-    originalHashedPassword: string
-  ) => Promise<boolean | void>;
-  generateToken: (data: UserData) => string;
-  decodeToken: (accessToken: string) => UserData;
+export interface AuthProvider {
+  signUp: (data: {
+    email: string;
+    name: string;
+    password: string;
+  }) => Promise<UserData>;
+  signIn: (data: { email: string; password: string }) => Promise<UserData>;
+  signOut: () => void;
+  isSignedIn: () => boolean;
+  getCurrentUser: () => Promise<UserData>;
+  getAccessToken: () => string;
+  checkError: (
+    response: any,
+    redirectConfig: {
+      401: string;
+      403: string;
+    }
+  ) => void;
 }
 
-type CreateAuthProviderFn = (config: Config) => AuthProvider;
+export type CreateAuthProviderFn = (params: {
+  host: string;
+  protocol?: string;
+  apiVersion?: string;
+  port?: number | null;
+  redirectHelper?: (urlToRedirect: string) => void;
+}) => AuthProvider;
+
+export const LOCAL_STORAGE_KEY = "authProvider:accessToken";
 
 export const createAuthProvider: CreateAuthProviderFn = ({
-  PASSWORD_SALT_ROUNDS,
-  AUTH_TOKEN_SECRET
+  host,
+  port = null,
+  protocol = "https",
+  apiVersion = "v1",
+  redirectHelper = () => {}
 }) => {
-  const hashPassword = async password => {
-    const hashedPassword = await bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
+  // We need to do like this because of this:
+  // https://github.com/axios/axios/issues/1754#issuecomment-415963871
+  const axios = baseAxios.create({ adapter: httpAdapter });
 
-    return hashedPassword;
+  const getPath = basePath => `api/${apiVersion}/${basePath}`;
+
+  const signUp = async userData => {
+    const url = makeUrl({
+      host,
+      port,
+      protocol,
+      path: getPath("sign-up")
+    });
+
+    const {
+      data: {
+        data: { user, accessToken }
+      }
+    } = await axios.post(url, userData);
+
+    localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
+
+    return user;
   };
 
-  const checkPassword = async (newPassword, originalHashedPassword) => {
-    const arePasswordsEqual = await bcrypt.compare(
-      newPassword,
-      originalHashedPassword
-    );
+  const signIn = async userData => {
+    const url = makeUrl({
+      host,
+      port,
+      protocol,
+      path: getPath("sign-in")
+    });
 
-    return arePasswordsEqual;
+    const {
+      data: {
+        data: { user, accessToken }
+      }
+    } = await axios.post(url, userData);
+
+    localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
+
+    return user;
   };
 
-  const generateToken = userData => {
-    return sign(userData, AUTH_TOKEN_SECRET);
+  const signOut = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
   };
 
-  const decodeToken = accessToken => {
-    return verify(accessToken, AUTH_TOKEN_SECRET);
+  const getAccessToken = () => {
+    return localStorage.getItem(LOCAL_STORAGE_KEY);
+  };
+
+  const isSignedIn = () => {
+    return Boolean(getAccessToken());
+  };
+
+  const getCurrentUser = async () => {
+    if (!isSignedIn()) {
+      return null;
+    }
+
+    const url = makeUrl({
+      host,
+      port,
+      protocol,
+      path: getPath("current-user")
+    });
+
+    const accessToken = getAccessToken();
+
+    const {
+      data: {
+        data: { user }
+      }
+    } = await axios.get(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    return user;
+  };
+
+  const checkError = (
+    response,
+    { 401: urlToRedirectAfter401, 403: urlToRedirectAfter403 }
+  ) => {
+    const { status: responseStatus } = response;
+
+    if (responseStatus === "401") {
+      signOut();
+      redirectHelper(urlToRedirectAfter401);
+    }
+
+    if (responseStatus === "403") {
+      redirectHelper(urlToRedirectAfter403);
+    }
   };
 
   return {
-    hashPassword,
-    checkPassword,
-    generateToken,
-    decodeToken
+    signUp,
+    signIn,
+    signOut,
+    isSignedIn,
+    getCurrentUser,
+    getAccessToken,
+    checkError
   };
 };
