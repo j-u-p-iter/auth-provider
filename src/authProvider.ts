@@ -6,11 +6,12 @@ import qs from "qs";
 type UserData = any;
 
 export interface AuthProvider {
+  // it's responsibility of getCurrentUser method to bring user info
   signUp: (data: {
     email: string;
     name: string;
     password: string;
-  }) => Promise<UserData>;
+  }) => Promise<void>;
   signIn: (data: { email: string; password: string }) => Promise<UserData>;
   signOut: () => void;
   isSignedIn: () => boolean;
@@ -77,7 +78,7 @@ export const createAuthProvider: CreateAuthProviderFn = ({
 
     const {
       data: {
-        data: { user, accessToken }
+        data: { accessToken }
       }
     } = await axios.post(url, userData);
 
@@ -85,15 +86,11 @@ export const createAuthProvider: CreateAuthProviderFn = ({
       ignoreQueryPrefix: true
     });
 
-    if (redirectTo) {
-      console.log(window.location.href);
-      console.log(redirectTo);
-      redirectHelper(redirectTo);
-    }
-
     localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
 
-    return user;
+    if (redirectTo) {
+      redirectHelper(redirectTo);
+    }
   };
 
   const signOut = () => {

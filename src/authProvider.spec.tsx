@@ -83,12 +83,11 @@ describe("authProvider", () => {
       it("sends request, returns correct result and saves accessToken in localStorage", async () => {
         expect(authProvider.getAccessToken()).toBe(null);
 
-        const user = await authProvider.signIn({
+        await authProvider.signIn({
           email: "some@email.com",
           password: 12345
         });
 
-        expect(user).toEqual(signResponse.data.user);
         expect(authProvider.getAccessToken()).toBe(
           signResponse.data.accessToken
         );
