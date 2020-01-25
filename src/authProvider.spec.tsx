@@ -1,7 +1,16 @@
 import nock from "nock";
+
 import { createAuthProvider } from ".";
 
 describe("authProvider", () => {
+  const setupQueryString = queryString => {
+    window.history.pushState({}, "", queryString ? `?${queryString}` : null);
+  };
+
+  const resetQueryString = () => {
+    window.history.pushState({}, "", "/");
+  };
+
   const signResponse = {
     data: { user: { id: 1 }, accessToken: "someAccessToken" }
   };
@@ -16,15 +25,19 @@ describe("authProvider", () => {
     const getPath = subPath => `/api/v1/${subPath}`;
 
     let authProvider;
+    const redirectHelper = jest.fn();
 
     beforeAll(() => {
       authProvider = createAuthProvider({
-        host
+        host,
+        redirectHelper
       });
     });
 
     beforeEach(() => {
       localStorage.clear();
+
+      redirectHelper.mockClear();
     });
 
     describe("signUp", () => {
@@ -51,10 +64,20 @@ describe("authProvider", () => {
     });
 
     describe("signIn", () => {
+      let redirectToPath;
+
       beforeAll(() => {
+        redirectToPath = `${host}/admin`;
+
         nock(baseUrl)
           .post(getPath("sign-in"))
           .reply(200, signResponse);
+
+        setupQueryString(`redirectTo=${redirectToPath}`);
+      });
+
+      afterAll(() => {
+        resetQueryString();
       });
 
       it("sends request, returns correct result and saves accessToken in localStorage", async () => {
@@ -69,6 +92,8 @@ describe("authProvider", () => {
         expect(authProvider.getAccessToken()).toBe(
           signResponse.data.accessToken
         );
+        expect(redirectHelper).toHaveBeenCalledTimes(1);
+        expect(redirectHelper).toHaveBeenCalledWith(redirectToPath);
       });
     });
 
@@ -177,18 +202,6 @@ describe("authProvider", () => {
     });
 
     describe("checkError", () => {
-      let authProviderWithRedirectHelper;
-      const redirectHelper = jest.fn();
-
-      beforeEach(() => {
-        redirectHelper.mockClear();
-
-        authProviderWithRedirectHelper = createAuthProvider({
-          host,
-          redirectHelper
-        });
-      });
-
       describe("in case of 401 response", () => {
         let urlToRedirectAfter401;
 
@@ -198,24 +211,32 @@ describe("authProvider", () => {
           nock(baseUrl)
             .post(getPath("sign-in"))
             .reply(200, signResponse);
+
+          setupQueryString("admin/users");
+        });
+
+        afterAll(() => {
+          resetQueryString();
         });
 
         it("logouts and redirects to correct url", async () => {
-          await authProviderWithRedirectHelper.signIn({
+          await authProvider.signIn({
             email: "some@email.com",
             password: 12345
           });
 
           expect(authProvider.isSignedIn()).toBe(true);
 
-          authProviderWithRedirectHelper.checkError(
+          authProvider.checkError(
             { status: "401" },
             { 401: urlToRedirectAfter401 }
           );
 
           expect(authProvider.isSignedIn()).toBe(false);
           expect(redirectHelper).toHaveBeenCalledTimes(1);
-          expect(redirectHelper).toHaveBeenCalledWith(urlToRedirectAfter401);
+          expect(redirectHelper).toHaveBeenCalledWith(
+            `${urlToRedirectAfter401}?redirectTo=${window.location.href}`
+          );
         });
       });
 
@@ -231,14 +252,14 @@ describe("authProvider", () => {
         });
 
         it("does not logout and redirects to correct url", async () => {
-          await authProviderWithRedirectHelper.signIn({
+          await authProvider.signIn({
             email: "some@email.com",
             password: 12345
           });
 
           expect(authProvider.isSignedIn()).toBe(true);
 
-          authProviderWithRedirectHelper.checkError(
+          authProvider.checkError(
             { status: "403" },
             { 403: urlToRedirectAfter403 }
           );

@@ -1,6 +1,7 @@
 import { makeUrl } from "@j.u.p.iter/node-utils";
 import baseAxios from "axios";
 import httpAdapter from "axios/lib/adapters/http";
+import qs from "qs";
 
 type UserData = any;
 
@@ -80,6 +81,16 @@ export const createAuthProvider: CreateAuthProviderFn = ({
       }
     } = await axios.post(url, userData);
 
+    const { redirectTo } = qs.parse(window.location.search, {
+      ignoreQueryPrefix: true
+    });
+
+    if (redirectTo) {
+      console.log(window.location.href);
+      console.log(redirectTo);
+      redirectHelper(redirectTo);
+    }
+
     localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
 
     return user;
@@ -130,7 +141,10 @@ export const createAuthProvider: CreateAuthProviderFn = ({
 
     if (responseStatus === "401") {
       signOut();
-      redirectHelper(urlToRedirectAfter401);
+
+      redirectHelper(
+        `${urlToRedirectAfter401}?redirectTo=${window.location.href}`
+      );
     }
 
     if (responseStatus === "403") {
