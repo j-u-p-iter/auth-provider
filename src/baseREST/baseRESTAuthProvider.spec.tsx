@@ -1,6 +1,6 @@
 import nock from "nock";
 
-import { createAuthProvider } from ".";
+import { createBaseRESTAuthProvider as createAuthProvider } from "../.";
 
 describe("authProvider", () => {
   const setupQueryString = queryString => {

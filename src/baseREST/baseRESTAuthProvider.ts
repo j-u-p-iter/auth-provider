@@ -36,7 +36,7 @@ export type CreateAuthProviderFn = (params: {
 
 export const LOCAL_STORAGE_KEY = "authProvider:accessToken";
 
-export const createAuthProvider: CreateAuthProviderFn = ({
+export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   host,
   port = null,
   protocol = "https",
