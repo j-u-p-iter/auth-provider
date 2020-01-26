@@ -21,9 +21,6 @@
     "lint:fix": "yarn run lint --fix",
     "test": "jupiter-scripts test"
   },
-  "peerDependencies": {
-    "mongoose": ">=5.8.7"
-  },
   "devDependencies": {
     "@j.u.p.iter/jupiter-scripts": "^1.14.1",
     "@testing-library/react": "^9.4.0",
