@@ -12,7 +12,7 @@ export interface AuthProvider {
     name: string;
     password: string;
   }) => Promise<void>;
-  signIn: (data: { email: string; password: string }) => Promise<UserData>;
+  signIn: (data: { email: string; password: string }) => Promise<void>;
   signOut: () => void;
   isSignedIn: () => boolean;
   getCurrentUser: () => Promise<UserData>;
