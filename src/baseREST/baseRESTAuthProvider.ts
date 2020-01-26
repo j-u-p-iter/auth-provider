@@ -1,6 +1,5 @@
 import { makeUrl } from "@j.u.p.iter/node-utils";
-import baseAxios from "axios";
-import httpAdapter from "axios/lib/adapters/http";
+import axios from "axios";
 import qs from "qs";
 
 type UserData = any;
@@ -43,10 +42,6 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   apiVersion = "v1",
   redirectHelper = () => {}
 }) => {
-  // We need to do like this because of this:
-  // https://github.com/axios/axios/issues/1754#issuecomment-415963871
-  const axios = baseAxios.create({ adapter: httpAdapter });
-
   const getPath = basePath => `api/${apiVersion}/${basePath}`;
 
   const signUp = async userData => {
