@@ -22,7 +22,7 @@ describe("authProvider", () => {
   describe("with default params", () => {
     const host = "super-site.com";
     const baseUrl = `https://${host}`;
-    const getPath = subPath => `/api/v1/${subPath}`;
+    const getPath = subPath => `/api/v1/auth/${subPath}`;
 
     let authProvider;
     const redirectHelper = jest.fn();
@@ -284,7 +284,7 @@ describe("authProvider", () => {
       });
 
       nock("http://localhost:5000")
-        .post("/api/v2/sign-in")
+        .post("/api/v2/auth/sign-in")
         .reply(200, signResponse);
     });
 

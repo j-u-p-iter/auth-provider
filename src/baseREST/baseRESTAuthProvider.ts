@@ -41,7 +41,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   apiVersion = "v1",
   redirectHelper = () => {}
 }) => {
-  const getPath = basePath => `api/${apiVersion}/${basePath}`;
+  const getPath = basePath => `api/${apiVersion}/auth/${basePath}`;
 
   const signUp = async userData => {
     const url = makeUrl({
