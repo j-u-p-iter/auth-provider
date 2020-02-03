@@ -15,6 +15,10 @@ describe("authProvider", () => {
     data: { user: { id: 1 }, accessToken: "someAccessToken" }
   };
 
+  const errorResponse = {
+    error: "some error message"
+  };
+
   const currentUserResponse = {
     data: { user: { id: 1, name: "some name", email: "some@email.com" } }
   };
@@ -41,59 +45,106 @@ describe("authProvider", () => {
     });
 
     describe("signUp", () => {
-      beforeAll(() => {
-        nock(baseUrl)
-          .post(getPath("sign-up"))
-          .reply(200, signResponse);
-      });
-
-      it("sends request, returns correct result, and save token in localStorage", async () => {
-        expect(authProvider.getAccessToken()).toBe(null);
-
-        const user = await authProvider.signUp({
-          email: "some@email.com",
-          name: "someName",
-          password: 12345
+      describe("when request fails with error", () => {
+        beforeAll(() => {
+          nock(baseUrl)
+            .post(getPath("sign-up"))
+            .reply(400, errorResponse);
         });
 
-        expect(user).toEqual(signResponse.data.user);
-        expect(authProvider.getAccessToken()).toBe(
-          signResponse.data.accessToken
-        );
+        it("handles error properly", async () => {
+          expect(authProvider.getAccessToken()).toBe(null);
+
+          const { error } = await authProvider.signUp({
+            email: "some@email.com",
+            name: "someName",
+            password: 12345
+          });
+
+          expect(authProvider.getAccessToken()).toBe(null);
+
+          expect(error).toEqual(errorResponse.error);
+        });
+      });
+
+      describe("when request resolves successfully", () => {
+        beforeAll(() => {
+          nock(baseUrl)
+            .post(getPath("sign-up"))
+            .reply(200, signResponse);
+        });
+
+        it("sends request, returns correct result, and save token in localStorage", async () => {
+          expect(authProvider.getAccessToken()).toBe(null);
+
+          const { data: user } = await authProvider.signUp({
+            email: "some@email.com",
+            name: "someName",
+            password: 12345
+          });
+
+          expect(user).toEqual(signResponse.data.user);
+          expect(authProvider.getAccessToken()).toBe(
+            signResponse.data.accessToken
+          );
+        });
       });
     });
 
     describe("signIn", () => {
-      let redirectToPath;
-
-      beforeAll(() => {
-        redirectToPath = `${host}/admin`;
-
-        nock(baseUrl)
-          .post(getPath("sign-in"))
-          .reply(200, signResponse);
-
-        setupQueryString(`redirectTo=${redirectToPath}`);
-      });
-
-      afterAll(() => {
-        resetQueryString();
-      });
-
-      it("sends request, returns correct result and saves accessToken in localStorage", async () => {
-        expect(authProvider.getAccessToken()).toBe(null);
-
-        const user = await authProvider.signIn({
-          email: "some@email.com",
-          password: 12345
+      describe("when request fails with error", () => {
+        beforeAll(() => {
+          nock(baseUrl)
+            .post(getPath("sign-in"))
+            .reply(400, errorResponse);
         });
 
-        expect(user).toEqual(signResponse.data.user);
-        expect(authProvider.getAccessToken()).toBe(
-          signResponse.data.accessToken
-        );
-        expect(redirectHelper).toHaveBeenCalledTimes(1);
-        expect(redirectHelper).toHaveBeenCalledWith(redirectToPath);
+        it("handles error properly", async () => {
+          expect(authProvider.getAccessToken()).toBe(null);
+
+          const { error } = await authProvider.signIn({
+            email: "some@email.com",
+            password: 12345
+          });
+
+          expect(authProvider.getAccessToken()).toBe(null);
+
+          expect(error).toEqual(errorResponse.error);
+        });
+      });
+
+      describe("when request resolves successfully", () => {
+        let redirectToPath;
+
+        beforeAll(() => {
+          redirectToPath = `${host}/admin`;
+
+          nock(baseUrl)
+            .post(getPath("sign-in"))
+            .reply(200, signResponse);
+
+          setupQueryString(`redirectTo=${redirectToPath}`);
+        });
+
+        afterAll(() => {
+          resetQueryString();
+        });
+
+        it("sends request, returns correct result and saves accessToken in localStorage", async () => {
+          expect(authProvider.getAccessToken()).toBe(null);
+
+          const { data: user } = await authProvider.signIn({
+            email: "some@email.com",
+            password: 12345
+          });
+
+          expect(user).toEqual(signResponse.data.user);
+          expect(authProvider.getAccessToken()).toBe(
+            signResponse.data.accessToken
+          );
+          expect(redirectHelper).toHaveBeenCalledTimes(1);
+          expect(redirectHelper).toHaveBeenCalledWith(redirectToPath);
+        });
       });
     });
 
@@ -163,17 +214,7 @@ describe("authProvider", () => {
     });
 
     describe("getCurrentUser", () => {
-      describe("when user is not signed in", () => {
-        it("resolves to null", async () => {
-          expect(authProvider.isSignedIn()).toBe(false);
-
-          const user = await authProvider.getCurrentUser();
-
-          expect(user).toBe(null);
-        });
-      });
-
-      describe("when user is signed in", () => {
+      describe("when request fails with error", () => {
         beforeAll(() => {
           nock(baseUrl)
             .post(getPath("sign-in"))
@@ -185,18 +226,57 @@ describe("authProvider", () => {
             }
           })
             .get(getPath("current-user"))
-            .reply(200, currentUserResponse);
+            .reply(400, errorResponse);
         });
 
-        it("resolves to correct user data", async () => {
+        it("handles error properly", async () => {
           await authProvider.signIn({
             email: "some@email.com",
             password: 12345
           });
 
-          const user = await authProvider.getCurrentUser();
+          const { error } = await authProvider.getCurrentUser();
 
-          expect(user).toEqual(currentUserResponse.data.user);
+          expect(error).toEqual(errorResponse.error);
+        });
+      });
+
+      describe("when request resolves successfully", () => {
+        describe("when user is not signed in", () => {
+          it("resolves to null", async () => {
+            expect(authProvider.isSignedIn()).toBe(false);
+
+            const user = await authProvider.getCurrentUser();
+
+            expect(user).toBe(null);
+          });
+        });
+
+        describe("when user is signed in", () => {
+          beforeAll(() => {
+            nock(baseUrl)
+              .post(getPath("sign-in"))
+              .reply(200, signResponse);
+
+            nock(baseUrl, {
+              reqheaders: {
+                Authorization: `Bearer ${signResponse.data.accessToken}`
+              }
+            })
+              .get(getPath("current-user"))
+              .reply(200, currentUserResponse);
+          });
+
+          it("resolves to correct user data", async () => {
+            await authProvider.signIn({
+              email: "some@email.com",
+              password: 12345
+            });
+
+            const { data: user } = await authProvider.getCurrentUser();
+
+            expect(user).toEqual(currentUserResponse.data.user);
+          });
         });
       });
     });

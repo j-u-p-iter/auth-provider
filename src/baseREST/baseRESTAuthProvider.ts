@@ -34,6 +34,22 @@ export type CreateAuthProviderFn = (params: {
 
 export const LOCAL_STORAGE_KEY = "authProvider:accessToken";
 
+const handleRequest = async requestCall => {
+  let response;
+
+  try {
+    response = await requestCall;
+  } catch (err) {
+    response = err.response;
+  }
+
+  const {
+    data: { error, data }
+  } = response;
+
+  return { error, data };
+};
+
 export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   host,
   port = null,
@@ -51,15 +67,17 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       path: getPath("sign-up")
     });
 
-    const {
-      data: {
-        data: { user, accessToken }
-      }
-    } = await axios.post(url, userData);
+    const { data, error } = await handleRequest(axios.post(url, userData));
+
+    if (error) {
+      return { error };
+    }
+
+    const { user, accessToken } = data;
 
     localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
 
-    return user;
+    return { data: user };
   };
 
   const signIn = async userData => {
@@ -70,11 +88,13 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       path: getPath("sign-in")
     });
 
-    const {
-      data: {
-        data: { user, accessToken }
-      }
-    } = await axios.post(url, userData);
+    const { error, data } = await handleRequest(axios.post(url, userData));
+
+    if (error) {
+      return { error };
+    }
+
+    const { user, accessToken } = data;
 
     const { redirectTo } = qs.parse(window.location.search, {
       ignoreQueryPrefix: true
@@ -86,7 +106,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       redirectHelper(redirectTo);
     }
 
-    return user;
+    return { data: user };
   };
 
   const signOut = () => {
@@ -115,15 +135,19 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
 
     const accessToken = getAccessToken();
 
-    const {
-      data: {
-        data: { user }
-      }
-    } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    const { error, data } = await handleRequest(
+      axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+    );
 
-    return user;
+    if (error) {
+      return { error };
+    }
+
+    const { user } = data;
+
+    return { data: user };
   };
 
   const checkError = (
