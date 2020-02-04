@@ -5,11 +5,14 @@ import qs from "qs";
 type UserData = any;
 
 export interface AuthProvider {
-  signUp: (data: {
-    email: string;
-    name: string;
-    password: string;
-  }) => Promise<UserData>;
+  signUp: (
+    data: {
+      email: string;
+      name: string;
+      password: string;
+    },
+    pathToRedirect?: string
+  ) => Promise<UserData>;
   signIn: (data: { email: string; password: string }) => Promise<UserData>;
   signOut: () => void;
   isSignedIn: () => boolean;
@@ -59,7 +62,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
 }) => {
   const getPath = basePath => `api/${apiVersion}/auth/${basePath}`;
 
-  const signUp = async userData => {
+  const signUp = async (userData, pathToRedirect) => {
     const url = makeUrl({
       host,
       port,
@@ -76,6 +79,10 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     const { user, accessToken } = data;
 
     localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
+
+    if (pathToRedirect) {
+      redirectHelper(pathToRedirect);
+    }
 
     return { data: user };
   };

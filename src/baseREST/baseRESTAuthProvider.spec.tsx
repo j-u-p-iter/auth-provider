@@ -68,25 +68,50 @@ describe("authProvider", () => {
       });
 
       describe("when request resolves successfully", () => {
-        beforeAll(() => {
+        beforeEach(() => {
           nock(baseUrl)
             .post(getPath("sign-up"))
             .reply(200, signResponse);
         });
 
-        it("sends request, returns correct result, and save token in localStorage", async () => {
-          expect(authProvider.getAccessToken()).toBe(null);
+        describe("with path to redirect", () => {
+          it("sends request, returns correct result, and save token in localStorage", async () => {
+            expect(authProvider.getAccessToken()).toBe(null);
 
-          const { data: user } = await authProvider.signUp({
-            email: "some@email.com",
-            name: "someName",
-            password: 12345
+            const { data: user } = await authProvider.signUp(
+              {
+                email: "some@email.com",
+                name: "someName",
+                password: 12345
+              },
+              "/home/page"
+            );
+
+            expect(redirectHelper).toHaveBeenCalledTimes(1);
+            expect(redirectHelper).toHaveBeenCalledWith("/home/page");
+            expect(user).toEqual(signResponse.data.user);
+            expect(authProvider.getAccessToken()).toBe(
+              signResponse.data.accessToken
+            );
           });
+        });
 
-          expect(user).toEqual(signResponse.data.user);
-          expect(authProvider.getAccessToken()).toBe(
-            signResponse.data.accessToken
-          );
+        describe("without path to redirect", () => {
+          it("sends request, returns correct result, and save token in localStorage", async () => {
+            expect(authProvider.getAccessToken()).toBe(null);
+
+            const { data: user } = await authProvider.signUp({
+              email: "some@email.com",
+              name: "someName",
+              password: 12345
+            });
+
+            expect(redirectHelper).toHaveBeenCalledTimes(0);
+            expect(user).toEqual(signResponse.data.user);
+            expect(authProvider.getAccessToken()).toBe(
+              signResponse.data.accessToken
+            );
+          });
         });
       });
     });
