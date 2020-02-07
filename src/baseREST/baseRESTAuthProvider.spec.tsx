@@ -271,7 +271,7 @@ describe("authProvider", () => {
           it("resolves to null", async () => {
             expect(authProvider.isSignedIn()).toBe(false);
 
-            const user = await authProvider.getCurrentUser();
+            const { data: user } = await authProvider.getCurrentUser();
 
             expect(user).toBe(null);
           });

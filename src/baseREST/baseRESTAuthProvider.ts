@@ -130,7 +130,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
 
   const getCurrentUser = async () => {
     if (!isSignedIn()) {
-      return null;
+      return { data: null, error: null };
     }
 
     const url = makeUrl({
