@@ -4,6 +4,17 @@ import qs from "qs";
 
 type UserData = any;
 
+export enum OAuthClientName {
+  Google = "google",
+  GitHub = "github"
+}
+
+interface SignInParams {
+  oauthClientName?: OAuthClientName;
+  code?: string;
+  userData?: { email: string; password: string };
+}
+
 export interface AuthProvider {
   signUp: (
     data: {
@@ -13,7 +24,9 @@ export interface AuthProvider {
     },
     pathToRedirect?: string
   ) => Promise<UserData>;
-  signIn: (data: { email: string; password: string }) => Promise<UserData>;
+  signIn: (
+    data: SignInParams
+  ) => Promise<{ data: UserData } | { error: string }>;
   signOut: () => void;
   isSignedIn: () => boolean;
   getCurrentUser: () => Promise<UserData>;
@@ -60,7 +73,22 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   apiVersion = "v1",
   redirectHelper = () => {}
 }) => {
-  const getPath = basePath => `api/${apiVersion}/auth/${basePath}`;
+  type MakeOAuthURL = (oauthClientName: OAuthClientName) => string;
+  const makeOAuthURL: MakeOAuthURL = oauthClientName => {
+    const path = getOAuthPath(`${oauthClientName}/sign-in`);
+
+    return makeUrl({
+      host,
+      port,
+      protocol,
+      path
+    });
+  };
+
+  type GetPath = (basePath: string) => string;
+  const getPath: GetPath = basePath => `api/${apiVersion}/auth/${basePath}`;
+  const getOAuthPath: GetPath = basePath =>
+    `api/${apiVersion}/oauth/${basePath}`;
 
   const signUp = async (userData, pathToRedirect) => {
     const url = makeUrl({
@@ -87,15 +115,28 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     return { data: user };
   };
 
-  const signIn = async userData => {
-    const url = makeUrl({
-      host,
-      port,
-      protocol,
-      path: getPath("sign-in")
-    });
+  const signIn = async params => {
+    let error;
+    let data;
 
-    const { error, data } = await handleRequest(axios.post(url, userData));
+    console.log(params);
+    if (params.oauthClientName) {
+      const url = makeOAuthURL(params.oauthClientName);
+
+      ({ error, data } = await handleRequest(
+        axios.post(url, { code: params.code })
+      ));
+    } else {
+      const url = makeUrl({
+        host,
+        port,
+        protocol,
+        path: getPath("sign-in")
+      });
+      console.log(url);
+
+      ({ error, data } = await handleRequest(axios.post(url, params.userData)));
+    }
 
     if (error) {
       return { error };

@@ -1,6 +1,9 @@
 import nock from "nock";
 
-import { createBaseRESTAuthProvider as createAuthProvider } from "../.";
+import {
+  createBaseRESTAuthProvider as createAuthProvider,
+  OAuthClientName
+} from "../.";
 
 describe("authProvider", () => {
   const setupQueryString = queryString => {
@@ -27,6 +30,7 @@ describe("authProvider", () => {
     const host = "super-site.com";
     const baseUrl = `https://${host}`;
     const getPath = subPath => `/api/v1/auth/${subPath}`;
+    const getOAuthPath = subPath => `/api/v1/oauth/${subPath}`;
 
     let authProvider;
     const redirectHelper = jest.fn();
@@ -117,58 +121,109 @@ describe("authProvider", () => {
     });
 
     describe("signIn", () => {
-      describe("when request fails with error", () => {
-        beforeAll(() => {
-          nock(baseUrl)
-            .post(getPath("sign-in"))
-            .reply(400, errorResponse);
-        });
-
-        it("handles error properly", async () => {
-          expect(authProvider.getAccessToken()).toBe(null);
-
-          const { error } = await authProvider.signIn({
-            email: "some@email.com",
-            password: 12345
+      describe("without oauth client", () => {
+        describe("when request fails with error", () => {
+          beforeAll(() => {
+            nock(baseUrl)
+              .post(getPath("sign-in"))
+              .reply(400, errorResponse);
           });
 
-          expect(authProvider.getAccessToken()).toBe(null);
+          it("handles error properly", async () => {
+            expect(authProvider.getAccessToken()).toBe(null);
 
-          expect(error).toEqual(errorResponse.error);
+            const { error } = await authProvider.signIn({
+              userData: {
+                email: "some@email.com",
+                password: 12345
+              }
+            });
+
+            expect(authProvider.getAccessToken()).toBe(null);
+
+            expect(error).toEqual(errorResponse.error);
+          });
+        });
+
+        describe("when request resolves successfully", () => {
+          let redirectToPath;
+
+          beforeAll(() => {
+            redirectToPath = `${host}/admin`;
+
+            nock(baseUrl)
+              .post(getPath("sign-in"))
+              .reply(200, signResponse);
+
+            setupQueryString(`redirectTo=${redirectToPath}`);
+          });
+
+          afterAll(() => {
+            resetQueryString();
+          });
+
+          it("sends request, returns correct result and saves accessToken in localStorage", async () => {
+            expect(authProvider.getAccessToken()).toBe(null);
+
+            const { data: user } = await authProvider.signIn({
+              userData: {
+                email: "some@email.com",
+                password: 12345
+              }
+            });
+
+            expect(user).toEqual(signResponse.data.user);
+            expect(authProvider.getAccessToken()).toBe(
+              signResponse.data.accessToken
+            );
+            expect(redirectHelper).toHaveBeenCalledTimes(1);
+            expect(redirectHelper).toHaveBeenCalledWith(redirectToPath);
+          });
         });
       });
 
-      describe("when request resolves successfully", () => {
-        let redirectToPath;
-
-        beforeAll(() => {
-          redirectToPath = `${host}/admin`;
-
-          nock(baseUrl)
-            .post(getPath("sign-in"))
-            .reply(200, signResponse);
-
-          setupQueryString(`redirectTo=${redirectToPath}`);
-        });
-
-        afterAll(() => {
-          resetQueryString();
-        });
-
-        it("sends request, returns correct result and saves accessToken in localStorage", async () => {
-          expect(authProvider.getAccessToken()).toBe(null);
-
-          const { data: user } = await authProvider.signIn({
-            email: "some@email.com",
-            password: 12345
+      describe("with oauth client", () => {
+        describe("when request fails with error", () => {
+          beforeAll(() => {
+            nock(baseUrl)
+              .post(getOAuthPath("google/sign-in"))
+              .reply(400, errorResponse);
           });
 
-          expect(user).toEqual(signResponse.data.user);
-          expect(authProvider.getAccessToken()).toBe(
-            signResponse.data.accessToken
-          );
-          expect(redirectHelper).toHaveBeenCalledTimes(1);
-          expect(redirectHelper).toHaveBeenCalledWith(redirectToPath);
+          it("handles error properly", async () => {
+            expect(authProvider.getAccessToken()).toBe(null);
+
+            const { error } = await authProvider.signIn({
+              code: "some-code",
+              oauthClientName: OAuthClientName.Google
+            });
+
+            expect(authProvider.getAccessToken()).toBe(null);
+
+            expect(error).toEqual(errorResponse.error);
+          });
+        });
+
+        describe("when request resolves successfully", () => {
+          beforeAll(() => {
+            nock(baseUrl)
+              .post(getOAuthPath("google/sign-in"))
+              .reply(200, signResponse);
+          });
+
+          it("sends request, returns correct result and saves accessToken in localStorage", async () => {
+            expect(authProvider.getAccessToken()).toBe(null);
+
+            const { data: user } = await authProvider.signIn({
+              code: "some-code",
+              oauthClientName: OAuthClientName.Google
+            });
+
+            expect(user).toEqual(signResponse.data.user);
+            expect(authProvider.getAccessToken()).toBe(
+              signResponse.data.accessToken
+            );
+          });
         });
       });
     });
@@ -182,8 +237,10 @@ describe("authProvider", () => {
 
       it("removes access token from localStorage", async () => {
         await authProvider.signIn({
-          email: "some@email.com",
-          password: 12345
+          userData: {
+            email: "some@email.com",
+            password: 12345
+          }
         });
 
         expect(authProvider.getAccessToken()).toBe(
@@ -205,8 +262,10 @@ describe("authProvider", () => {
 
       it("checks authentication properly", async () => {
         await authProvider.signIn({
-          email: "some@email.com",
-          password: 12345
+          userData: {
+            email: "some@email.com",
+            password: 12345
+          }
         });
 
         expect(authProvider.isSignedIn()).toBe(true);
@@ -228,8 +287,10 @@ describe("authProvider", () => {
         expect(authProvider.getAccessToken()).toBe(null);
 
         await authProvider.signIn({
-          email: "some@email.com",
-          password: 12345
+          userData: {
+            email: "some@email.com",
+            password: 12345
+          }
         });
 
         expect(authProvider.getAccessToken()).toBe(
@@ -256,8 +317,10 @@ describe("authProvider", () => {
 
         it("handles error properly", async () => {
           await authProvider.signIn({
-            email: "some@email.com",
-            password: 12345
+            userData: {
+              email: "some@email.com",
+              password: 12345
+            }
           });
 
           const { error } = await authProvider.getCurrentUser();
@@ -294,8 +357,10 @@ describe("authProvider", () => {
 
           it("resolves to correct user data", async () => {
             await authProvider.signIn({
-              email: "some@email.com",
-              password: 12345
+              userData: {
+                email: "some@email.com",
+                password: 12345
+              }
             });
 
             const { data: user } = await authProvider.getCurrentUser();
@@ -326,8 +391,10 @@ describe("authProvider", () => {
 
         it("logouts and redirects to correct url", async () => {
           await authProvider.signIn({
-            email: "some@email.com",
-            password: 12345
+            userData: {
+              email: "some@email.com",
+              password: 12345
+            }
           });
 
           expect(authProvider.isSignedIn()).toBe(true);
@@ -358,8 +425,10 @@ describe("authProvider", () => {
 
         it("does not logout and redirects to correct url", async () => {
           await authProvider.signIn({
-            email: "some@email.com",
-            password: 12345
+            userData: {
+              email: "some@email.com",
+              password: 12345
+            }
           });
 
           expect(authProvider.isSignedIn()).toBe(true);
@@ -395,8 +464,10 @@ describe("authProvider", () => {
 
     it("sends requests to correct url", async () => {
       await authProvider.signIn({
-        email: "some@email.com",
-        password: 12345
+        userData: {
+          email: "some@email.com",
+          password: 12345
+        }
       });
 
       expect(authProvider.isSignedIn()).toBe(true);
