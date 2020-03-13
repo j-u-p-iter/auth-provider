@@ -119,7 +119,6 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     let error;
     let data;
 
-    console.log(params);
     if (params.oauthClientName) {
       const url = makeOAuthURL(params.oauthClientName);
 
@@ -133,7 +132,6 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
         protocol,
         path: getPath("sign-in")
       });
-      console.log(url);
 
       ({ error, data } = await handleRequest(axios.post(url, params.userData)));
     }
