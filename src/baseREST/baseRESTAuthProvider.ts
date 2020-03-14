@@ -17,6 +17,11 @@ export interface SignInParams {
   userData?: { email: string; password: string };
 }
 
+export interface Response {
+  data?: UserData;
+  error?: string;
+}
+
 export interface AuthProvider {
   signUp: (
     data: {
@@ -25,13 +30,11 @@ export interface AuthProvider {
       password: string;
     },
     pathToRedirect?: string
-  ) => Promise<UserData>;
-  signIn: (
-    data: SignInParams
-  ) => Promise<{ data: UserData } | { error: string }>;
+  ) => Promise<Response>;
+  signIn: (data: SignInParams) => Promise<Response>;
   signOut: () => void;
   isSignedIn: () => boolean;
-  getCurrentUser: () => Promise<UserData>;
+  getCurrentUser: () => Promise<Response>;
   getAccessToken: () => string;
   checkError: (
     response: any,
