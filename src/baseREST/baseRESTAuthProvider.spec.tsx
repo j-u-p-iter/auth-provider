@@ -183,10 +183,12 @@ describe("authProvider", () => {
       });
 
       describe("with oauth client", () => {
+        const CODE = "some-code";
+
         describe("when request fails with error", () => {
           beforeAll(() => {
             nock(baseUrl)
-              .post(getOAuthPath("google/sign-in"))
+              .post(getOAuthPath("google/sign-in"), { code: CODE })
               .reply(400, errorResponse);
           });
 
@@ -194,7 +196,7 @@ describe("authProvider", () => {
             expect(authProvider.getAccessToken()).toBe(null);
 
             const { error } = await authProvider.signIn({
-              code: "some-code",
+              code: CODE,
               oauthClientName: OAuthClientName.Google
             });
 
@@ -207,7 +209,9 @@ describe("authProvider", () => {
         describe("when request resolves successfully", () => {
           beforeAll(() => {
             nock(baseUrl)
-              .post(getOAuthPath("google/sign-in"))
+              .post(getOAuthPath("google/sign-in"), {
+                code: CODE
+              })
               .reply(200, signResponse);
           });
 
@@ -215,7 +219,7 @@ describe("authProvider", () => {
             expect(authProvider.getAccessToken()).toBe(null);
 
             const { data: user } = await authProvider.signIn({
-              code: "some-code",
+              code: CODE,
               oauthClientName: OAuthClientName.Google
             });
 
