@@ -2,14 +2,16 @@ import { makeUrl } from "@j.u.p.iter/node-utils";
 import axios from "axios";
 import qs from "qs";
 
-type UserData = any;
+interface UserData {
+  [key: string]: any;
+}
 
 export enum OAuthClientName {
   Google = "google",
   GitHub = "github"
 }
 
-interface SignInParams {
+export interface SignInParams {
   oauthClientName?: OAuthClientName;
   code?: string;
   userData?: { email: string; password: string };
