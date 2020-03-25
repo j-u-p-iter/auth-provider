@@ -1,5 +1,6 @@
 import { makeUrl } from "@j.u.p.iter/node-utils";
 import axios from "axios";
+import HTTPStatus from "http-status";
 import qs from "qs";
 
 interface UserData {
@@ -207,7 +208,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   ) => {
     const { status: responseStatus } = response;
 
-    if (responseStatus === "401") {
+    if (responseStatus === HTTPStatus.UNAUTHORIZED) {
       signOut();
 
       redirectHelper(
@@ -215,7 +216,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       );
     }
 
-    if (responseStatus === "403") {
+    if (responseStatus === HTTPStatus.FORBIDDEN) {
       redirectHelper(urlToRedirectAfter403);
     }
   };

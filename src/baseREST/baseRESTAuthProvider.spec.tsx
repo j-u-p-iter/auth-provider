@@ -404,7 +404,7 @@ describe("authProvider", () => {
           expect(authProvider.isSignedIn()).toBe(true);
 
           authProvider.checkError(
-            { status: "401" },
+            { status: 401 },
             { 401: urlToRedirectAfter401 }
           );
 
@@ -438,7 +438,7 @@ describe("authProvider", () => {
           expect(authProvider.isSignedIn()).toBe(true);
 
           authProvider.checkError(
-            { status: "403" },
+            { status: 403 },
             { 403: urlToRedirectAfter403 }
           );
 
@@ -478,7 +478,7 @@ describe("authProvider", () => {
     });
 
     it("does not throw error without predefined redirectHelper", async () => {
-      await authProvider.checkError({ status: "401" }, { 401: "some url" });
+      await authProvider.checkError({ status: 401 }, { 401: "some url" });
     });
   });
 });
