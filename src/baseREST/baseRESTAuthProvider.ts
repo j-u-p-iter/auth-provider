@@ -9,7 +9,8 @@ interface UserData {
 
 export enum OAuthClientName {
   Google = "google",
-  GitHub = "github"
+  GitHub = "github",
+  Apple = "apple"
 }
 
 export interface SignInParams {
