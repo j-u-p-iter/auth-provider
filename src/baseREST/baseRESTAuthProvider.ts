@@ -1,6 +1,5 @@
 import { makeUrl } from "@j.u.p.iter/node-utils";
 import axios from "axios";
-import qs from "qs";
 
 interface UserData {
   [key: string]: any;
@@ -24,14 +23,11 @@ export interface Response {
 }
 
 export interface AuthProvider {
-  signUp: (
-    data: {
-      email: string;
-      name: string;
-      password: string;
-    },
-    pathToRedirect?: string
-  ) => Promise<Response>;
+  signUp: (data: {
+    email: string;
+    name: string;
+    password: string;
+  }) => Promise<Response>;
   signIn: (data: SignInParams) => Promise<Response>;
   signOut: () => void;
   isSignedIn: () => boolean;
@@ -44,7 +40,6 @@ export type CreateAuthProviderFn = (params: {
   protocol?: string;
   apiVersion?: string;
   port?: number | null;
-  redirectHelper?: (urlToRedirect: string) => void;
 }) => AuthProvider;
 
 export const LOCAL_STORAGE_KEY = "authProvider:accessToken";
@@ -69,8 +64,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   host,
   port = null,
   protocol = "https",
-  apiVersion = "v1",
-  redirectHelper = () => {}
+  apiVersion = "v1"
 }) => {
   type MakeOAuthURL = (oauthClientName: OAuthClientName) => string;
   const makeOAuthURL: MakeOAuthURL = oauthClientName => {
@@ -89,7 +83,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   const getOAuthPath: GetPath = basePath =>
     `api/${apiVersion}/oauth/${basePath}`;
 
-  const signUp = async (userData, pathToRedirect) => {
+  const signUp = async userData => {
     const url = makeUrl({
       host,
       port,
@@ -106,10 +100,6 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     const { user, accessToken } = data;
 
     localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
-
-    if (pathToRedirect) {
-      redirectHelper(pathToRedirect);
-    }
 
     return { data: user };
   };
@@ -141,15 +131,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
 
     const { user, accessToken } = data;
 
-    const { redirectTo } = qs.parse(window.location.search, {
-      ignoreQueryPrefix: true
-    });
-
     localStorage.setItem(LOCAL_STORAGE_KEY, accessToken);
-
-    if (redirectTo) {
-      redirectHelper(redirectTo);
-    }
 
     return { data: user };
   };

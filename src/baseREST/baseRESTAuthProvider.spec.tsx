@@ -33,19 +33,15 @@ describe("authProvider", () => {
     const getOAuthPath = subPath => `/api/v1/oauth/${subPath}`;
 
     let authProvider;
-    const redirectHelper = jest.fn();
 
     beforeAll(() => {
       authProvider = createAuthProvider({
-        host,
-        redirectHelper
+        host
       });
     });
 
     beforeEach(() => {
       localStorage.clear();
-
-      redirectHelper.mockClear();
     });
 
     describe("signUp", () => {
@@ -91,8 +87,6 @@ describe("authProvider", () => {
               "/home/page"
             );
 
-            expect(redirectHelper).toHaveBeenCalledTimes(1);
-            expect(redirectHelper).toHaveBeenCalledWith("/home/page");
             expect(user).toEqual(signResponse.data.user);
             expect(authProvider.getAccessToken()).toBe(
               signResponse.data.accessToken
@@ -110,7 +104,6 @@ describe("authProvider", () => {
               password: 12345
             });
 
-            expect(redirectHelper).toHaveBeenCalledTimes(0);
             expect(user).toEqual(signResponse.data.user);
             expect(authProvider.getAccessToken()).toBe(
               signResponse.data.accessToken
@@ -176,8 +169,6 @@ describe("authProvider", () => {
             expect(authProvider.getAccessToken()).toBe(
               signResponse.data.accessToken
             );
-            expect(redirectHelper).toHaveBeenCalledTimes(1);
-            expect(redirectHelper).toHaveBeenCalledWith(redirectToPath);
           });
         });
       });
