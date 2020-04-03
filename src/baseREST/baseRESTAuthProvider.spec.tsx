@@ -374,80 +374,6 @@ describe("authProvider", () => {
         });
       });
     });
-
-    describe("checkError", () => {
-      describe("in case of 401 response", () => {
-        let urlToRedirectAfter401;
-
-        beforeAll(() => {
-          urlToRedirectAfter401 = "urlToRedirectAfter401";
-
-          nock(baseUrl)
-            .post(getPath("sign-in"))
-            .reply(200, signResponse);
-
-          setupQueryString("admin/users");
-        });
-
-        afterAll(() => {
-          resetQueryString();
-        });
-
-        it("logouts and redirects to correct url", async () => {
-          await authProvider.signIn({
-            userData: {
-              email: "some@email.com",
-              password: 12345
-            }
-          });
-
-          expect(authProvider.isSignedIn()).toBe(true);
-
-          authProvider.checkError(
-            { status: 401 },
-            { 401: urlToRedirectAfter401 }
-          );
-
-          expect(authProvider.isSignedIn()).toBe(false);
-          expect(redirectHelper).toHaveBeenCalledTimes(1);
-          expect(redirectHelper).toHaveBeenCalledWith(
-            `${urlToRedirectAfter401}?redirectTo=${window.location.href}`
-          );
-        });
-      });
-
-      describe("in case of 403 response", () => {
-        let urlToRedirectAfter403;
-
-        beforeAll(() => {
-          urlToRedirectAfter403 = "urlToRedirectAfter403";
-
-          nock(baseUrl)
-            .post(getPath("sign-in"))
-            .reply(200, signResponse);
-        });
-
-        it("does not logout and redirects to correct url", async () => {
-          await authProvider.signIn({
-            userData: {
-              email: "some@email.com",
-              password: 12345
-            }
-          });
-
-          expect(authProvider.isSignedIn()).toBe(true);
-
-          authProvider.checkError(
-            { status: 403 },
-            { 403: urlToRedirectAfter403 }
-          );
-
-          expect(authProvider.isSignedIn()).toBe(true);
-          expect(redirectHelper).toHaveBeenCalledTimes(1);
-          expect(redirectHelper).toHaveBeenCalledWith(urlToRedirectAfter403);
-        });
-      });
-    });
   });
 
   describe("with custom params", () => {
@@ -475,10 +401,6 @@ describe("authProvider", () => {
       });
 
       expect(authProvider.isSignedIn()).toBe(true);
-    });
-
-    it("does not throw error without predefined redirectHelper", async () => {
-      await authProvider.checkError({ status: 401 }, { 401: "some url" });
     });
   });
 });

@@ -1,6 +1,5 @@
 import { makeUrl } from "@j.u.p.iter/node-utils";
 import axios from "axios";
-import HTTPStatus from "http-status";
 import qs from "qs";
 
 interface UserData {
@@ -38,13 +37,6 @@ export interface AuthProvider {
   isSignedIn: () => boolean;
   getCurrentUser: () => Promise<Response>;
   getAccessToken: () => string;
-  checkError: (
-    response: any,
-    redirectConfig: {
-      401: string;
-      403: string;
-    }
-  ) => void;
 }
 
 export type CreateAuthProviderFn = (params: {
@@ -203,32 +195,12 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     return { data: user };
   };
 
-  const checkError = (
-    response,
-    { 401: urlToRedirectAfter401, 403: urlToRedirectAfter403 }
-  ) => {
-    const { status: responseStatus } = response;
-
-    if (responseStatus === HTTPStatus.UNAUTHORIZED) {
-      signOut();
-
-      redirectHelper(
-        `${urlToRedirectAfter401}?redirectTo=${window.location.href}`
-      );
-    }
-
-    if (responseStatus === HTTPStatus.FORBIDDEN) {
-      redirectHelper(urlToRedirectAfter403);
-    }
-  };
-
   return {
     signUp,
     signIn,
     signOut,
     isSignedIn,
     getCurrentUser,
-    getAccessToken,
-    checkError
+    getAccessToken
   };
 };
