@@ -32,6 +32,7 @@ export interface AuthProvider {
   signOut: () => void;
   isSignedIn: () => boolean;
   getCurrentUser: () => Promise<Response>;
+  updateCurrentUser: (data: UserData) => Promise<Response>;
   getAccessToken: () => string;
 }
 
@@ -148,6 +149,15 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     return Boolean(getAccessToken());
   };
 
+  type GetRequestParams = () => { headers: { Authorization: string } };
+  const getRequestParams: GetRequestParams = () => {
+    const accessToken = getAccessToken();
+
+    return {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    };
+  };
+
   const getCurrentUser = async () => {
     if (!isSignedIn()) {
       return { data: null, error: null };
@@ -160,12 +170,29 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       path: getPath("current-user")
     });
 
-    const accessToken = getAccessToken();
+    const { error, data } = await handleRequest(
+      axios.get(url, getRequestParams())
+    );
+
+    if (error) {
+      return { error };
+    }
+
+    const { user } = data;
+
+    return { data: user };
+  };
+
+  const updateCurrentUser = async dataToUpdate => {
+    const url = makeUrl({
+      host,
+      port,
+      protocol,
+      path: getPath("current-user")
+    });
 
     const { error, data } = await handleRequest(
-      axios.get(url, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      })
+      axios.put(url, dataToUpdate, getRequestParams())
     );
 
     if (error) {
@@ -183,6 +210,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     signOut,
     isSignedIn,
     getCurrentUser,
+    updateCurrentUser,
     getAccessToken
   };
 };

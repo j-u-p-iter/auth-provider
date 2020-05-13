@@ -46,7 +46,7 @@ describe("authProvider", () => {
 
     describe("signUp", () => {
       describe("when request fails with error", () => {
-        beforeAll(() => {
+        beforeEach(() => {
           nock(baseUrl)
             .post(getPath("sign-up"))
             .reply(400, errorResponse);
@@ -116,7 +116,7 @@ describe("authProvider", () => {
     describe("signIn", () => {
       describe("without oauth client", () => {
         describe("when request fails with error", () => {
-          beforeAll(() => {
+          beforeEach(() => {
             nock(baseUrl)
               .post(getPath("sign-in"))
               .reply(400, errorResponse);
@@ -141,7 +141,7 @@ describe("authProvider", () => {
         describe("when request resolves successfully", () => {
           let redirectToPath;
 
-          beforeAll(() => {
+          beforeEach(() => {
             redirectToPath = `${host}/admin`;
 
             nock(baseUrl)
@@ -177,7 +177,7 @@ describe("authProvider", () => {
         const CODE = "some-code";
 
         describe("when request fails with error", () => {
-          beforeAll(() => {
+          beforeEach(() => {
             nock(baseUrl)
               .post(getOAuthPath("google/sign-in"), { code: CODE })
               .reply(400, errorResponse);
@@ -198,7 +198,7 @@ describe("authProvider", () => {
         });
 
         describe("when request resolves successfully", () => {
-          beforeAll(() => {
+          beforeEach(() => {
             nock(baseUrl)
               .post(getOAuthPath("google/sign-in"), {
                 code: CODE
@@ -224,7 +224,7 @@ describe("authProvider", () => {
     });
 
     describe("signOut", () => {
-      beforeAll(() => {
+      beforeEach(() => {
         nock(baseUrl)
           .post(getPath("sign-in"))
           .reply(200, signResponse);
@@ -249,7 +249,7 @@ describe("authProvider", () => {
     });
 
     describe("isSignedIn", () => {
-      beforeAll(() => {
+      beforeEach(() => {
         nock(baseUrl)
           .post(getPath("sign-in"))
           .reply(200, signResponse);
@@ -272,7 +272,7 @@ describe("authProvider", () => {
     });
 
     describe("getAccessToken", () => {
-      beforeAll(() => {
+      beforeEach(() => {
         nock(baseUrl)
           .post(getPath("sign-in"))
           .reply(200, signResponse);
@@ -294,9 +294,75 @@ describe("authProvider", () => {
       });
     });
 
+    describe("updateCurrentUser", () => {
+      describe("when request fails with error", () => {
+        beforeEach(() => {
+          nock(baseUrl)
+            .post(getPath("sign-in"))
+            .reply(200, signResponse);
+
+          nock(baseUrl, {
+            reqheaders: {
+              Authorization: `Bearer ${signResponse.data.accessToken}`
+            }
+          })
+            .put(getPath("current-user"))
+            .reply(400, errorResponse);
+        });
+
+        it("handles error properly", async () => {
+          await authProvider.signIn({
+            userData: {
+              email: "some@email.com",
+              password: 12345
+            }
+          });
+
+          const { error } = await authProvider.updateCurrentUser(
+            currentUserResponse.data.user
+          );
+
+          expect(error).toEqual(errorResponse.error);
+        });
+      });
+
+      describe("when request resolves successfully", () => {
+        describe("when user is signed in", () => {
+          beforeEach(() => {
+            nock(baseUrl)
+              .post(getPath("sign-in"))
+              .reply(200, signResponse);
+
+            nock(baseUrl, {
+              reqheaders: {
+                Authorization: `Bearer ${signResponse.data.accessToken}`
+              }
+            })
+              .put(getPath("current-user"))
+              .reply(200, currentUserResponse);
+          });
+
+          it("resolves to correct user data", async () => {
+            await authProvider.signIn({
+              userData: {
+                email: "some@email.com",
+                password: 12345
+              }
+            });
+
+            const { data: user } = await authProvider.updateCurrentUser(
+              currentUserResponse.data.user
+            );
+
+            expect(user).toEqual(currentUserResponse.data.user);
+          });
+        });
+      });
+    });
+
     describe("getCurrentUser", () => {
       describe("when request fails with error", () => {
-        beforeAll(() => {
+        beforeEach(() => {
           nock(baseUrl)
             .post(getPath("sign-in"))
             .reply(200, signResponse);
@@ -336,7 +402,7 @@ describe("authProvider", () => {
         });
 
         describe("when user is signed in", () => {
-          beforeAll(() => {
+          beforeEach(() => {
             nock(baseUrl)
               .post(getPath("sign-in"))
               .reply(200, signResponse);
@@ -370,7 +436,7 @@ describe("authProvider", () => {
   describe("with custom params", () => {
     let authProvider;
 
-    beforeAll(() => {
+    beforeEach(() => {
       authProvider = createAuthProvider({
         host: "localhost",
         port: 5000,
