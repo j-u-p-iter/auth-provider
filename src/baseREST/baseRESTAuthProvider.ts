@@ -34,6 +34,8 @@ export interface AuthProvider {
   getCurrentUser: () => Promise<Response>;
   updateCurrentUser: (data: UserData) => Promise<Response>;
   getAccessToken: () => string;
+  askNewPassword: (data: { email: string }) => void;
+  resetPassword: (data: { token: string; password: string }) => void;
 }
 
 export type CreateAuthProviderFn = (params: {
@@ -204,6 +206,36 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     return { data: user };
   };
 
+  const askNewPassword = async ({ email }) => {
+    const url = makeUrl({
+      host,
+      port,
+      protocol,
+      path: getPath("ask-new-password")
+    });
+
+    const { error } = await handleRequest(axios.post(url, { email }));
+
+    if (error) {
+      return { error };
+    }
+  };
+
+  const resetPassword = async ({ token, password }) => {
+    const url = makeUrl({
+      host,
+      port,
+      protocol,
+      path: getPath("reset-password")
+    });
+
+    const { error } = await handleRequest(axios.post(url, { token, password }));
+
+    if (error) {
+      return { error };
+    }
+  };
+
   return {
     signUp,
     signIn,
@@ -211,6 +243,8 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     isSignedIn,
     getCurrentUser,
     updateCurrentUser,
-    getAccessToken
+    getAccessToken,
+    askNewPassword,
+    resetPassword
   };
 };

@@ -360,6 +360,76 @@ describe("authProvider", () => {
       });
     });
 
+    describe("askNewPassword", () => {
+      describe("when request fails with error", () => {
+        beforeEach(() => {
+          nock(baseUrl)
+            .post(getPath("ask-new-password"))
+            .reply(404, errorResponse);
+        });
+
+        it("handles error properly", async () => {
+          const { error } = await authProvider.askNewPassword({
+            email: "some@email.com"
+          });
+
+          expect(error).toEqual(errorResponse.error);
+        });
+      });
+
+      describe("when request resolves successfully", () => {
+        beforeEach(() => {
+          nock(baseUrl)
+            .post(getPath("ask-new-password"))
+            .reply(200);
+        });
+
+        it("does not return error", async () => {
+          const response = await authProvider.askNewPassword({
+            email: "some@email.com"
+          });
+
+          expect(response).not.toBeDefined();
+        });
+      });
+    });
+
+    describe("resetPassword", () => {
+      describe("when request fails with error", () => {
+        beforeEach(() => {
+          nock(baseUrl)
+            .post(getPath("reset-password"))
+            .reply(404, errorResponse);
+        });
+
+        it("handles error properly", async () => {
+          const { error } = await authProvider.resetPassword({
+            token: "someSuperSecretToken",
+            password: "newPassword"
+          });
+
+          expect(error).toEqual(errorResponse.error);
+        });
+      });
+
+      describe("when request resolves successfully", () => {
+        beforeEach(() => {
+          nock(baseUrl)
+            .post(getPath("reset-password"))
+            .reply(200);
+        });
+
+        it("does not return error", async () => {
+          const response = await authProvider.resetPassword({
+            token: "someSuperSecretToken",
+            password: "newPassword"
+          });
+
+          expect(response).not.toBeDefined();
+        });
+      });
+    });
+
     describe("getCurrentUser", () => {
       describe("when request fails with error", () => {
         beforeEach(() => {
