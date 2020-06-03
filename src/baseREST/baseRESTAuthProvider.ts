@@ -34,8 +34,13 @@ export interface AuthProvider {
   getCurrentUser: () => Promise<Response>;
   updateCurrentUser: (data: UserData) => Promise<Response>;
   getAccessToken: () => string;
-  askNewPassword: (data: { email: string }) => void;
-  resetPassword: (data: { token: string; password: string }) => void;
+  askNewPassword: (data: {
+    email: string;
+  }) => Promise<{ error: string } | void>;
+  resetPassword: (data: {
+    token: string;
+    password: string;
+  }) => Promise<{ error: string } | void>;
 }
 
 export type CreateAuthProviderFn = (params: {
