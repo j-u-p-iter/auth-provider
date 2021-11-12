@@ -15,8 +15,8 @@ const handleRequest = async requestCall => {
 export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   fetcher,
   host,
-  port = null,
   protocol = "https",
+  port = null,
   apiVersion = "v1"
 }) => {
   type MakeOAuthURL = (oauthClientName: OAuthClientName) => string;
