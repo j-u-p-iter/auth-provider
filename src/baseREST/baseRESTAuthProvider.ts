@@ -16,7 +16,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
   fetcher,
   host,
   protocol = "https",
-  port = null,
+  port,
   apiVersion = "v1"
 }) => {
   type MakeOAuthURL = (oauthClientName: OAuthClientName) => string;
