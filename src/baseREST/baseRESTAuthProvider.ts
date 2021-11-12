@@ -1,74 +1,19 @@
 import { makeUrl } from "@j.u.p.iter/node-utils";
-import axios from "axios";
-
-interface UserData {
-  [key: string]: any;
-}
-
-export enum OAuthClientName {
-  Google = "google",
-  GitHub = "github",
-  Apple = "apple"
-}
-
-export interface SignInParams {
-  oauthClientName?: OAuthClientName;
-  code?: string;
-  userData?: { email: string; password: string };
-}
-
-export interface Response {
-  data?: UserData;
-  error?: string;
-}
-
-export interface AuthProvider {
-  signUp: (data: {
-    email: string;
-    name: string;
-    password: string;
-  }) => Promise<Response>;
-  signIn: (data: SignInParams) => Promise<Response>;
-  signOut: () => void;
-  isSignedIn: () => boolean;
-  getCurrentUser: () => Promise<Response>;
-  updateCurrentUser: (data: UserData) => Promise<Response>;
-  getAccessToken: () => string;
-  askNewPassword: (data: {
-    email: string;
-  }) => Promise<{ error: string } | void>;
-  resetPassword: (data: {
-    token: string;
-    password: string;
-  }) => Promise<{ error: string } | void>;
-}
-
-export type CreateAuthProviderFn = (params: {
-  host: string;
-  protocol?: string;
-  apiVersion?: string;
-  port?: number | null;
-}) => AuthProvider;
+import to from "await-to-js";
+import { CreateAuthProviderFn, OAuthClientName } from "../types";
 
 export const LOCAL_STORAGE_KEY = "authProvider:accessToken";
 
 const handleRequest = async requestCall => {
-  let response;
+  const [error, result] = await to(requestCall);
 
-  try {
-    response = await requestCall;
-  } catch (err) {
-    response = err.response;
-  }
-
-  const {
-    data: { error, data }
-  } = response;
+  const data = (result && result.data.data) || null;
 
   return { error, data };
 };
 
 export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
+  fetcher,
   host,
   port = null,
   protocol = "https",
@@ -99,7 +44,9 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       path: getPath("sign-up")
     });
 
-    const { data, error } = await handleRequest(axios.post(url, userData));
+    const { data, error } = await handleRequest(
+      fetcher.post(url, { body: userData }).request
+    );
 
     if (error) {
       return { error };
@@ -120,7 +67,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       const url = makeOAuthURL(params.oauthClientName);
 
       ({ error, data } = await handleRequest(
-        axios.post(url, { code: params.code })
+        fetcher.post(url, { body: { code: params.code } }).request
       ));
     } else {
       const url = makeUrl({
@@ -130,7 +77,9 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
         path: getPath("sign-in")
       });
 
-      ({ error, data } = await handleRequest(axios.post(url, params.userData)));
+      ({ error, data } = await handleRequest(
+        fetcher.post(url, { body: params.userData }).request
+      ));
     }
 
     if (error) {
@@ -178,7 +127,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     });
 
     const { error, data } = await handleRequest(
-      axios.get(url, getRequestParams())
+      fetcher.get(url, getRequestParams()).request
     );
 
     if (error) {
@@ -199,7 +148,7 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
     });
 
     const { error, data } = await handleRequest(
-      axios.put(url, dataToUpdate, getRequestParams())
+      fetcher.put(url, { body: dataToUpdate, ...getRequestParams() }).request
     );
 
     if (error) {
@@ -219,7 +168,9 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       path: getPath("ask-new-password")
     });
 
-    const { error } = await handleRequest(axios.post(url, { email }));
+    const { error } = await handleRequest(
+      fetcher.post(url, { body: { email } }).request
+    );
 
     if (error) {
       return { error };
@@ -234,7 +185,9 @@ export const createBaseRESTAuthProvider: CreateAuthProviderFn = ({
       path: getPath("reset-password")
     });
 
-    const { error } = await handleRequest(axios.post(url, { token, password }));
+    const { error } = await handleRequest(
+      fetcher.post(url, { body: { token, password } }).request
+    );
 
     if (error) {
       return { error };

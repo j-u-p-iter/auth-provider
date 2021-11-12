@@ -1,4 +1,6 @@
+import { fetchData } from "@j.u.p.iter/fetch-data";
 import nock from "nock";
+import fetch, { Request } from "node-fetch";
 
 import {
   createBaseRESTAuthProvider as createAuthProvider,
@@ -6,6 +8,9 @@ import {
 } from "../.";
 
 describe("authProvider", () => {
+  globalThis.fetch = fetch as any;
+  globalThis.Request = Request as any;
+
   const setupQueryString = queryString => {
     window.history.pushState({}, "", queryString ? `?${queryString}` : null);
   };
@@ -36,6 +41,7 @@ describe("authProvider", () => {
 
     beforeAll(() => {
       authProvider = createAuthProvider({
+        fetcher: fetchData,
         host
       });
     });
@@ -63,7 +69,10 @@ describe("authProvider", () => {
 
           expect(authProvider.getAccessToken()).toBe(null);
 
-          expect(error).toEqual(errorResponse.error);
+          expect(error.code).toBe(400);
+          expect((await error.response.json()).error).toEqual(
+            errorResponse.error
+          );
         });
       });
 
@@ -134,7 +143,10 @@ describe("authProvider", () => {
 
             expect(authProvider.getAccessToken()).toBe(null);
 
-            expect(error).toEqual(errorResponse.error);
+            expect(error.code).toBe(400);
+            expect((await error.response.json()).error).toEqual(
+              errorResponse.error
+            );
           });
         });
 
@@ -193,7 +205,10 @@ describe("authProvider", () => {
 
             expect(authProvider.getAccessToken()).toBe(null);
 
-            expect(error).toEqual(errorResponse.error);
+            expect(error.code).toBe(400);
+            expect((await error.response.json()).error).toEqual(
+              errorResponse.error
+            );
           });
         });
 
@@ -322,7 +337,10 @@ describe("authProvider", () => {
             currentUserResponse.data.user
           );
 
-          expect(error).toEqual(errorResponse.error);
+          expect(error.code).toBe(400);
+          expect((await error.response.json()).error).toEqual(
+            errorResponse.error
+          );
         });
       });
 
@@ -373,7 +391,10 @@ describe("authProvider", () => {
             email: "some@email.com"
           });
 
-          expect(error).toEqual(errorResponse.error);
+          expect(error.code).toBe(404);
+          expect((await error.response.json()).error).toEqual(
+            errorResponse.error
+          );
         });
       });
 
@@ -381,7 +402,7 @@ describe("authProvider", () => {
         beforeEach(() => {
           nock(baseUrl)
             .post(getPath("ask-new-password"))
-            .reply(200);
+            .reply(200, {});
         });
 
         it("does not return error", async () => {
@@ -408,7 +429,10 @@ describe("authProvider", () => {
             password: "newPassword"
           });
 
-          expect(error).toEqual(errorResponse.error);
+          expect(error.code).toBe(404);
+          expect((await error.response.json()).error).toEqual(
+            errorResponse.error
+          );
         });
       });
 
@@ -416,7 +440,7 @@ describe("authProvider", () => {
         beforeEach(() => {
           nock(baseUrl)
             .post(getPath("reset-password"))
-            .reply(200);
+            .reply(200, {});
         });
 
         it("does not return error", async () => {
@@ -456,7 +480,10 @@ describe("authProvider", () => {
 
           const { error } = await authProvider.getCurrentUser();
 
-          expect(error).toEqual(errorResponse.error);
+          expect(error.code).toBe(400);
+          expect((await error.response.json()).error).toEqual(
+            errorResponse.error
+          );
         });
       });
 
@@ -508,6 +535,7 @@ describe("authProvider", () => {
 
     beforeEach(() => {
       authProvider = createAuthProvider({
+        fetcher: fetchData,
         host: "localhost",
         port: 5000,
         protocol: "http",
