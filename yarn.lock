@@ -831,10 +831,10 @@
   dependencies:
     "@j.u.p.iter/http-status" "^1.2.1"
 
-"@j.u.p.iter/fetch-data@^1.4.0":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@j.u.p.iter/fetch-data/-/fetch-data-1.4.0.tgz#8f6b9c6afa0a169ec9616cd1a354b05f9de768cf"
-  integrity sha512-aMhsQJzz4b/1URc3GmlA1v8qBBtrkgq/Lzf1DS4y0FIVibKraSHFgHAKB/x20J80B5DtWuK7+nGBzWvpDYyLhg==
+"@j.u.p.iter/fetch-data@^1.5.1":
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/@j.u.p.iter/fetch-data/-/fetch-data-1.5.1.tgz#ca85b1a7331987a60c3bd16874b62400e3e9d6a2"
+  integrity sha512-7ozQU/QgsxIMSJVuZsJVY6+ZZpqeXDCYYCUZgsgOBXewqlPdL/EkbyM8Tkti7eHAr2Plg/PrzXLFd2WkJG4lzg==
   dependencies:
     "@j.u.p.iter/custom-error" "^1.6.1"
     abort-controller "^3.0.0"

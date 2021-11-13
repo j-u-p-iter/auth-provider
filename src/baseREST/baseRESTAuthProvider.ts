@@ -7,7 +7,7 @@ export const LOCAL_STORAGE_KEY = "authProvider:accessToken";
 const handleRequest = async requestCall => {
   const [error, result] = await to(requestCall);
 
-  const data = (result && result.data.data) || null;
+  const data = (result && result.data && result.data.data) || null;
 
   return { error, data };
 };
